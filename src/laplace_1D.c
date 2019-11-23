@@ -34,17 +34,17 @@ The ones outside the performance evaluation section can be kept.
  */
 void print_matrix(int me, int N, float *local_tab, int nb_rows)
 {
-        int i,j;
-        printf("\n \n Matrix printed by me: %d \n\n", me);
-        for(i = 0; i<nb_rows; i++)
+    int i,j;
+    printf("\n \n Matrix printed by me: %d \n\n", me);
+    for(i = 0; i<nb_rows; i++)
+    {
+        for(j = 0; j<N; j++)
         {
-                for(j = 0; j<N; j++)
-                {
-                        printf(" %.2f", *(local_tab+j+i*N)); // Change ".2f" to "%d" for more clarity (test mode, without laplace calculation)
-                        //printf(" %d",(int) *(local_tab+j+i*N));
-                }
-                printf("\n");
+            printf(" %.2f", *(local_tab+j+i*N)); // Change ".2f" to "%d" for more clarity (test mode, without laplace calculation)
+            //printf(" %d",(int) *(local_tab+j+i*N));
         }
+        printf("\n");
+    }
 }
 
 
@@ -53,22 +53,22 @@ void print_matrix(int me, int N, float *local_tab, int nb_rows)
  */
 void update_matrix (float *local_tab, int nb_rows, int N, int NPROC, int me)
 {
-        MPI_Status status;
+    MPI_Status status;
 
-        /* ---- SENDING ---- */
-        if(me != 0) // If I am not the processor 0
-                MPI_Send(local_tab+N, N, MPI_FLOAT, me-1, 1, MPI_COMM_WORLD); // I send the 2nd row (1st index: local_tab+N) of my local tab to previous processor (TAG = 1)
+    /* ---- SENDING ---- */
+    if (me != 0) // If I am not the processor 0
+        MPI_Send(local_tab+N, N, MPI_FLOAT, me-1, 1, MPI_COMM_WORLD); // I send the 2nd row (1st index: local_tab+N) of my local tab to previous processor (TAG = 1)
 
-        if(me != NPROC-1) // If am not the last processor
-                MPI_Send(local_tab+(nb_rows-2)*N, N, MPI_FLOAT, me+1, 2, MPI_COMM_WORLD); // I send the second-last row (1st index: local_tab+(nb_rows-2)*N) of my local tab to the next processor (TAG = 2)
+    if (me != NPROC-1) // If am not the last processor
+        MPI_Send(local_tab+(nb_rows-2)*N, N, MPI_FLOAT, me+1, 2, MPI_COMM_WORLD); // I send the second-last row (1st index: local_tab+(nb_rows-2)*N) of my local tab to the next processor (TAG = 2)
 
 
-        /* ---- RECEIVING ADJACENT ROWS ---- */
-        if(me != 0) // If I am not the processor 0
-                MPI_Recv(local_tab, N, MPI_FLOAT, me-1, 2, MPI_COMM_WORLD, &status); // I receive the msg of TAG = 1 and I update the 1st row of my local tab
+    /* ---- RECEIVING ADJACENT ROWS ---- */
+    if (me != 0) // If I am not the processor 0
+        MPI_Recv(local_tab, N, MPI_FLOAT, me-1, 2, MPI_COMM_WORLD, &status); // I receive the msg of TAG = 1 and I update the 1st row of my local tab
 
-        if(me != NPROC-1) // If I am not the last processor
-                MPI_Recv(local_tab+(nb_rows-1)*N, N, MPI_FLOAT, me+1, 1, MPI_COMM_WORLD, &status); // I receive the msg of TAG = 2 and I update the last row of my tab
+    if (me != NPROC-1) // If I am not the last processor
+        MPI_Recv(local_tab+(nb_rows-1)*N, N, MPI_FLOAT, me+1, 1, MPI_COMM_WORLD, &status); // I receive the msg of TAG = 2 and I update the last row of my tab
 }
 
 
@@ -147,21 +147,21 @@ void laplace(float* local_tab, int nb_rows, int N, int NPROC, int me)
  */
 void initialize_local_matrix(int me, int NPROC, int N, float *local_tab, int nb_rows)
 {
-        int i,j;
-        for(i = 0; i<nb_rows; i++)
+    int i,j;
+    for(i = 0; i<nb_rows; i++)
+    {
+        for(j = 0; j<N; j++)
         {
-                for(j = 0; j<N; j++)
-                {
-                        if ((i == 0) || (i == nb_rows-1))
-                        {
-                                *(local_tab+j+i*N) = -1;
-                        }
-                        else
-                        {
-                                *(local_tab+j+i*N) = me;
-                        }
-                }
+            if ((i == 0) || (i == nb_rows-1))
+            {
+                *(local_tab+j+i*N) = -1;
+            }
+            else
+            {
+                *(local_tab+j+i*N) = me;
+            }
         }
+    }
 }
 
 
@@ -170,26 +170,26 @@ void initialize_local_matrix(int me, int NPROC, int N, float *local_tab, int nb_
  */
 void print_final_matrix(int me, float* local_tab, int N , int NPROC)
 {
-        float *final_matrix = (float*)malloc(N*N*sizeof(float));
-        if (final_matrix == NULL) { exit(-1); } // Check if the memory has been well allocated
+    float *final_matrix = (float*)malloc(N*N*sizeof(float));
+    if (final_matrix == NULL) { exit(-1); } // Check if the memory has been well allocated
 
-        int root_id = 0; // numero of the processor responsible of gathering the data
-        MPI_Gather( local_tab+N,N*(N/NPROC), MPI_FLOAT, final_matrix, N*(N/NPROC), MPI_FLOAT, root_id, MPI_COMM_WORLD ); // we gather all the data from other processors
+    int root_id = 0; // numero of the processor responsible of gathering the data
+    MPI_Gather( local_tab+N,N*(N/NPROC), MPI_FLOAT, final_matrix, N*(N/NPROC), MPI_FLOAT, root_id, MPI_COMM_WORLD ); // we gather all the data from other processors
 
-        if (me == 0)
+    if (me == 0)
+    {
+        printf( "Final solution is:\n" );
+        for (int i=N-1; i>=0; i--) // reverse printing
         {
-            printf( "Final solution is:\n" );
-            for (int i=N-1; i>=0; i--) // reverse printing
+            for (int j=0; j<N; j++)
             {
-                for (int j=0; j<N; j++)
-                {
-	                printf("%.2f ", *(final_matrix + j + i*N)); // Change ".2f" to "%d" for more clarity (test mode, without laplace calculation)
-                    //printf("%d ",(int) *(final_matrix + j + i*N));
-                }
-                printf("\n");
+                printf("%.2f ", *(final_matrix + j + i*N)); // Change ".2f" to "%d" for more clarity (test mode, without laplace calculation)
+                //printf("%d ",(int) *(final_matrix + j + i*N));
             }
+            printf("\n");
         }
-        free(final_matrix);
+    }
+    free(final_matrix);
 }
 
 
