@@ -27,7 +27,7 @@ $ sudo apt install mpich   # install mpich in your system
 
 ## Compiling and running the code
 
-To run and compile the code:
+To compile and run the code:
 
 ### laplace_1D. c:
 ```shell
